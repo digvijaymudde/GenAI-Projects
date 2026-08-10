@@ -1,0 +1,66 @@
+{
+  "name": "Digvijay Sachin Mudde",
+  "email": "digvijaymudde123@gmail.com",
+  "phone": "+91-9421524532",
+  "total_experience_years": 1.5,
+  "skills": [
+    "Python",
+    "FastAPI",
+    "Groq LLaMA 3.3",
+    "OpenAI APIs",
+    "LangChain",
+    "vector databases",
+    "structured data extraction",
+    "Node.js",
+    "LLMs",
+    "Prompt Engineering",
+    "RAG",
+    "LlamaIndex",
+    "System Personas",
+    "ChromaDB",
+    "Pinecone",
+    "Async REST APIs",
+    "SSE Streaming",
+    "Data Science",
+    "Model Development",
+    "Pydantic",
+    "JSON Schema",
+    "MySQL",
+    "MongoDB",
+    "Git",
+    "Docker"
+  ],
+  "experiences": [
+    {
+      "company": "Capgemini",
+      "role": "Generative AI & Backend Developer",
+      "duration": "2024 – Present",
+      "description": "Architected and deployed enterprise-grade LLM pipelines using Python, FastAPI, and Groq LLaMA 3.3. Built Retrieval-Augmented Generation (RAG) systems for semantic document search and intelligent question answering. Developed real-time streaming AI endpoints using Server-Sent Events (SSE) for responsive user experiences. Engineered structured data extraction pipelines using Pydantic and JSON schema validation. Automated candidate-interaction workflows using conversational AI avatars and resume-based question answering systems. Containerized and deployed backend services using Docker-based environments.",
+      "skills_used": [
+        "Python",
+        "FastAPI",
+        "Groq LLaMA 3.3",
+        "RAG",
+        "SSE Streaming",
+        "Pydantic",
+        "JSON Schema",
+        "Docker"
+      ]
+    }
+  ],
+  "education": [
+    "B.E. Artificial Intelligence & Data Science, Dr. D. Y. Patil Institute of Technology 2020 – 2024",
+    "Higher Secondary Certificate (HSC), La.Na. Hoshing College, Jamkhed 2020",
+    "Secondary School Certificate (SSC), Shri Nagesh Vidyalaya, Jamkhed 2018"
+  ],
+  "projects": [
+    "HireMe AI – Interactive Candidate AI Avatar & Resume Parser",
+    "Enterprise RAG Document Q&A Pipeline",
+    "Second Hand Car Price Prediction",
+    "Book Recommender System"
+  ],
+  "certifications": [
+    "Generative AI & LLM Application Engineering",
+    "Full Stack Web Development – Aptech Center (Work With Dignity NGO)"
+  ]
+}
