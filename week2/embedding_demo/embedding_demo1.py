@@ -15,6 +15,7 @@ embeddings = model.encode(sentences)
 #Query Embeddings 
 query = "What is AI?"
 query_embedding = model.encode([query])
+print(type(embeddings))
 
 #Finding score
 scores = cosine_similarity(
