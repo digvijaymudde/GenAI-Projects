@@ -18,4 +18,31 @@ embeddings = model.encode(
     sentences
 ).astype("float32")
 
-d = embeddings.shape[1]
+d = 384
+
+nlist = 1
+quanatizer = faiss.IndexFlatL2(d)
+
+index = faiss.IndexIVFFlat(quanatizer,d,nlist)
+
+index.train(embeddings)
+index.add(embeddings)
+index.nprobe = 1
+
+query = "I like food"
+
+embed_query = model.encode(
+    [query]
+).astype("float32")
+
+distance, indices = index.search(
+    embed_query,
+    k=2
+)
+
+print(indices)
+print(distance)
+
+print(sentences[indices[0][0]])
+print(sentences[indices[0][1]])
+
