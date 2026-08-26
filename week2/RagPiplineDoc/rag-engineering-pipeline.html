@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RAG Engineering – Complete Pipeline</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --panel:#0f1526;
+    --border:#1f2a44;
+    --text:#e8ecf5;
+    --muted:#9aa5bf;
+    --gold:#e8b84b;
+
+    --c1:#3b82f6; --c1bg:#0e1b33;
+    --c2:#22c1c3; --c2bg:#0c1f22;
+    --c3:#22c55e; --c3bg:#0d2117;
+    --c4:#e0a83a; --c4bg:#23200f;
+    --c5:#8b5cf6; --c5bg:#1c1530;
+    --c6:#f97316; --c6bg:#2a1a0d;
+    --c7:#16a34a; --c7bg:#0e2015;
+    --c8:#ec4899; --c8bg:#2a1122;
+    --c9:#2563eb; --c9bg:#101b32;
+    --c10:#a855f7; --c10bg:#1e1330;
+    --c11:#14b8a6; --c11bg:#0d211f;
+    --c12:#ef4444; --c12bg:#2a1113;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    padding:28px;
+  }
+  .title{ text-align:center; }
+  .title h1{
+    margin:0; font-size:34px; letter-spacing:1px; font-weight:800;
+    color:#fff;
+  }
+  .title p{
+    margin:6px 0 26px; color:var(--gold); font-size:16px; font-weight:600;
+  }
+
+  .pipeline{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr) repeat(8, 1fr);
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .retrieval-wrap{
+    grid-column: 5 / 13;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 10px 0;
+    background:#0c1120;
+  }
+  .retrieval-label{
+    text-align:center; font-size:13px; font-weight:700; color:#fff;
+    margin-bottom:10px; letter-spacing:.5px;
+  }
+  .retrieval-label span{ color:var(--muted); font-weight:500; font-size:12px;}
+  .retrieval-grid{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:10px;
+  }
+
+  .step{
+    border-radius:10px; border:1px solid var(--border); overflow:hidden;
+    display:flex; flex-direction:column; background:var(--panel);
+  }
+  .step-head{
+    display:flex; align-items:center; gap:8px; padding:10px 10px;
+    font-weight:700; font-size:13px; color:#fff;
+  }
+  .num{
+    width:24px; height:24px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-size:12px; font-weight:800; flex:none; color:#0a0e1a;
+  }
+  .step-icon{ text-align:center; font-size:26px; padding:8px 6px 4px; }
+  .step-desc{
+    text-align:center; font-size:12px; font-weight:700; color:var(--text);
+    padding:0 8px 10px; min-height:30px;
+  }
+  .step-list{
+    list-style:none; margin:0; padding:8px 10px 12px; font-size:11.5px;
+    color:var(--muted); border-top:1px solid var(--border); flex:1;
+  }
+  .step-list li{ padding:2px 0; }
+  .step-list li::before{ content:"• "; color:var(--text); }
+
+  .arrow-row{ display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:16px;}
+
+  /* method panels */
+  .methods{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px;
+  }
+  .panel{
+    border-radius:10px; border:1px solid var(--border); background:var(--panel); overflow:hidden;
+  }
+  .panel-head{
+    padding:10px 14px; font-weight:800; font-size:13px; letter-spacing:.4px; color:#fff;
+  }
+  .panel-body{ padding:10px 14px 16px; font-size:12.5px; color:var(--muted); }
+  .panel-body b{ color:var(--text); }
+  .panel-body ul{ margin:4px 0 10px 16px; padding:0; }
+  .panel-body li{ padding:1.5px 0; }
+  .panel-body .sub{ color:var(--text); font-weight:700; margin-top:8px; display:block;}
+
+  .bottom{
+    display:grid; grid-template-columns:1fr 1.3fr 1fr 1.1fr; gap:12px; margin-bottom:16px;
+  }
+  .bottom .panel-body{ font-size:12px; }
+  .eval-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .check{ list-style:none; margin:0; padding:0; }
+  .check li{ padding:2px 0; }
+  .check li::before{ content:"✅ "; }
+  .flow{ font-size:12.5px; line-height:1.9; }
+  .flow b{ color:var(--gold); }
+
+  .footer{
+    border-radius:10px; border:1px solid var(--gold); background:#141026;
+    padding:12px 20px; display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:10px; font-size:12.5px; color:var(--text);
+  }
+  .footer .star{ color:var(--gold); font-weight:700; }
+  .badges{ display:flex; gap:16px; flex-wrap:wrap; }
+  .badges span{ display:flex; align-items:center; gap:6px; }
+</style>
+</head>
+<body>
+
+<div class="title">
+  <h1>RAG ENGINEERING — COMPLETE PIPELINE</h1>
+  <p>End-to-End Flow with Methods at Each Step</p>
+</div>
+
+<!-- TOP PIPELINE -->
+<div class="pipeline">
+
+  <div class="step" style="border-color:var(--c1)">
+    <div class="step-head" style="background:var(--c1bg)"><span class="num" style="background:var(--c1)">1</span>Data Ingestion</div>
+    <div class="step-icon">📥</div>
+    <div class="step-desc">Load data from multiple sources</div>
+    <ul class="step-list"><li>PDF, DOCX, TXT</li><li>Web pages</li><li>DB / SQL</li><li>APIs</li><li>Emails, Logs</li><li>SharePoint, etc.</li></ul>
+  </div>
+
+  <div class="step" style="border-color:var(--c2)">
+    <div class="step-head" style="background:var(--c2bg)"><span class="num" style="background:var(--c2)">2</span>Document Processing</div>
+    <div class="step-icon">📄</div>
+    <div class="step-desc">Extract & clean raw content</div>
+    <ul class="step-list"><li>Text Extraction</li><li>OCR (for scans)</li><li>Table Extraction</li><li>Deduplication</li><li>Cleaning</li><li>Normalization</li></ul>
+  </div>
+
+  <div class="step" style="border-color:var(--c3)">
+    <div class="step-head" style="background:var(--c3bg)"><span class="num" style="background:var(--c3)">3</span>Embedding Generation</div>
+    <div class="step-icon">🧠</div>
+    <div class="step-desc">Convert text into vector representations</div>
+    <ul class="step-list"><li>OpenAI Embeddings</li><li>SentenceTransformers</li><li>Cohere Embeddings</li><li>BGE / Instructor</li><li>Custom Models</li></ul>
+  </div>
+
+  <div class="step" style="border-color:var(--c4)">
+    <div class="step-head" style="background:var(--c4bg)"><span class="num" style="background:var(--c4)">4</span>Indexing / Vector Store</div>
+    <div class="step-icon">🗄️</div>
+    <div class="step-desc">Store embeddings + metadata</div>
+    <ul class="step-list"><li>Pinecone</li><li>Weaviate</li><li>Qdrant</li><li>Milvus</li><li>Elasticsearch</li><li>Chroma / FAISS</li></ul>
+  </div>
+
+  <div class="retrieval-wrap" style="grid-column:5/13">
+    <div class="retrieval-label">RETRIEVAL PIPELINE <span>(What we learned in detail)</span></div>
+    <div class="retrieval-grid">
+
+      <div class="step" style="border-color:var(--c5)">
+        <div class="step-head" style="background:var(--c5bg)"><span class="num" style="background:var(--c5)">5</span>Query Transformation</div>
+        <div class="step-icon">💬</div>
+        <div class="step-desc">Improve the user query</div>
+        <ul class="step-list"><li>Rewrite</li><li>Expand</li><li>Decompose</li><li>Hypothetical Q</li><li>Step-back</li><li>Multi-query</li><li>RAG-Fusion query</li></ul>
+      </div>
+
+      <div class="step" style="border-color:var(--c6)">
+        <div class="step-head" style="background:var(--c6bg)"><span class="num" style="background:var(--c6)">6</span>Metadata Filtering</div>
+        <div class="step-icon">🔻</div>
+        <div class="step-desc">Narrow down data using structured metadata</div>
+        <ul class="step-list"><li>Extract Filters (Rule-based / LLM)</li><li>Pre-Filtering</li><li>Post-Filtering</li><li>User / Tenant based</li><li>Access Control</li></ul>
+      </div>
+
+      <div class="step" style="border-color:var(--c7)">
+        <div class="step-head" style="background:var(--c7bg)"><span class="num" style="background:var(--c7)">7</span>Hybrid Search</div>
+        <div class="step-icon">🕸️</div>
+        <div class="step-desc">Search using multiple retrievers</div>
+        <ul class="step-list"><li>Dense Search (Semantic / Vector)</li><li>Sparse Search (BM25 / Keyword)</li><li>Field Boosting</li><li>Custom Weights</li></ul>
+      </div>
+
+      <div class="step" style="border-color:var(--c8)">
+        <div class="step-head" style="background:var(--c8bg)"><span class="num" style="background:var(--c8)">8</span>RRF (Fusion)</div>
+        <div class="step-icon">⚗️</div>
+        <div class="step-desc">Fuse results from multiple sources</div>
+        <ul class="step-list"><li>Reciprocal Rank Fusion (RRF)</li><li>Weighted RRF</li><li>CombSUM</li><li>Distribution Based Fusion</li></ul>
+      </div>
+
+      <div class="step" style="border-color:var(--c9)">
+        <div class="step-head" style="background:var(--c9bg)"><span class="num" style="background:var(--c9)">9</span>Reranking</div>
+        <div class="step-icon">📶</div>
+        <div class="step-desc">Re-rank top candidates for better relevance</div>
+        <ul class="step-list"><li>Cross-Encoder (e.g., bge-reranker)</li><li>Cohere Rerank</li><li>ColBERT</li><li>MonoT5</li><li>RankGPT</li></ul>
+      </div>
+
+      <div class="step" style="border-color:var(--c10)">
+        <div class="step-head" style="background:var(--c10bg)"><span class="num" style="background:var(--c10)">10</span>Context Assembly</div>
+        <div class="step-icon">🧩</div>
+        <div class="step-desc">Build final context for the LLM</div>
+        <ul class="step-list"><li>Top-K Selection</li><li>MMR (Diversity)</li><li>Context Ordering</li><li>Parent-Child Assembly</li><li>Token Budgeting</li><li>Deduplication</li></ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="step" style="border-color:var(--c11)">
+    <div class="step-head" style="background:var(--c11bg)"><span class="num" style="background:var(--c11)">11</span>LLM Generation</div>
+    <div class="step-icon">✨</div>
+    <div class="step-desc">Generate answer using the context</div>
+    <ul class="step-list"><li>GPT-4 / GPT-4o</li><li>Llama 3</li><li>Claude</li><li>Mistral</li><li>Mixtral</li><li>Custom Fine-tuned</li></ul>
+  </div>
+
+  <div class="step" style="border-color:var(--c12); grid-column:span 1;">
+    <div class="step-head" style="background:var(--c12bg)"><span class="num" style="background:var(--c12)">12</span>Output</div>
+    <div class="step-icon">📤</div>
+    <div class="step-desc">Return final response</div>
+    <ul class="step-list"><li>Answer</li><li>Citations</li><li>Sources</li><li>Confidence Score</li><li>Follow-up Questions</li></ul>
+  </div>
+
+</div>
+
+<!-- METHOD PANELS -->
+<div class="methods">
+
+  <div class="panel" style="border-color:var(--c3)">
+    <div class="panel-head" style="background:var(--c3bg); color:var(--c3)">DOCUMENT PROCESSING METHODS</div>
+    <div class="panel-body">
+      <b>1. Text Extraction</b>
+      <ul><li>PyMuPDF, Unstructured, LangChain</li><li>OCR (Tesseract, PaddleOCR)</li></ul>
+      <b>2. Chunking (We learned earlier)</b>
+      <ul><li>Fixed Size</li><li>Recursive Character</li><li>Semantic Chunking</li><li>Document Specific</li><li>Sliding Window</li><li>Hybrid Chunking</li></ul>
+      <b>3. Overlap Strategies</b>
+      <ul><li>Fixed Overlap</li><li>Semantic Overlap</li></ul>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--c5)">
+    <div class="panel-head" style="background:var(--c5bg); color:#c4b5fd">QUERY TRANSFORMATION METHODS</div>
+    <div class="panel-body">
+      <ul>
+        <li><b>1. Rewrite</b> — Fix grammar, spelling, clarity</li>
+        <li><b>2. Expand</b> — Add synonyms, related terms</li>
+        <li><b>3. Decompose</b> — Break complex query into sub-queries</li>
+        <li><b>4. Hypothetical Questions</b> — Generate questions that docs may answer</li>
+        <li><b>5. Step-back</b> — Ask higher level question then drill down</li>
+        <li><b>6. Multi-query</b> — Generate multiple variations</li>
+        <li><b>7. RAG-Fusion Query</b> — Combine multiple transformations + RRF</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--c6)">
+    <div class="panel-head" style="background:var(--c6bg); color:var(--c6)">METADATA FILTERING METHODS</div>
+    <div class="panel-body">
+      <b>A. Filter Extraction</b>
+      <ul><li>Rule-based (keywords, patterns)</li><li>LLM-based (structured output)</li><li>Application / User Context</li></ul>
+      <b>B. Filter Application</b>
+      <ul>
+        <li><b>1. Pre-Filtering</b> (Filter → Search) — Faster, more secure, higher precision, may reduce recall</li>
+        <li><b>2. Post-Filtering</b> (Search → Filter) — Higher recall, slower, less efficient</li>
+      </ul>
+      <b>C. Common Filters</b>
+      <ul><li>department, country, year, tenant_id, doc_type, author, source, permissions</li></ul>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--c7)">
+    <div class="panel-head" style="background:var(--c7bg); color:var(--c7)">HYBRID SEARCH METHODS</div>
+    <div class="panel-body">
+      <b>1. Dense / Semantic Search</b>
+      <ul><li>Cosine Similarity</li><li>Dot Product</li><li>Euclidean Distance</li></ul>
+      <b>2. Sparse / Keyword Search</b>
+      <ul><li>BM25</li><li>TF-IDF</li><li>Elasticsearch</li></ul>
+      <b>3. Advanced Techniques</b>
+      <ul><li>Field Boosting</li><li>Learned Sparse Retrieval</li><li>Hybrid with Filters</li><li>ANN + Inverted Index</li></ul>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--c8)">
+    <div class="panel-head" style="background:var(--c8bg); color:#f9a8d4">RRF (FUSION) METHODS</div>
+    <div class="panel-body">
+      <b>1. Reciprocal Rank Fusion (RRF)</b>
+      <p style="margin:4px 0 10px;">Score(d) = Σ 1 / (k + rank_i(d))  &nbsp; (k = constant, usually 60)</p>
+      <b>2. Weighted RRF</b>
+      <p style="margin:4px 0 10px;">Assign weights to each retriever</p>
+      <b>3. CombSUM / CombMNZ</b>
+      <p style="margin:4px 0 10px;">Sum normalized scores</p>
+      <b>4. Distribution Based Fusion</b>
+      <p style="margin:4px 0 0;">Use score distributions for fusion</p>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--c9)">
+    <div class="panel-head" style="background:var(--c9bg); color:#93c5fd">RERANKING METHODS</div>
+    <div class="panel-body">
+      <b>1. Cross-Encoder Reranking</b>
+      <ul><li>bge-reranker</li><li>Cohere Rerank</li><li>sentence-transformers</li><li>monoT5</li></ul>
+      <b>2. Late Interaction Models</b>
+      <ul><li>ColBERT / ColBERTv2</li></ul>
+      <b>3. LLM-based Reranking</b>
+      <ul><li>RankGPT / LLM Judge</li></ul>
+      <b>4. Relevance Scoring</b>
+      <ul><li>Semantic Similarity</li><li>Relevance Probability</li><li>Pairwise Ranking</li></ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM PANELS -->
+<div class="bottom">
+
+  <div class="panel" style="border-color:var(--c4)">
+    <div class="panel-head" style="background:var(--c4bg); color:var(--c4)">VECTOR STORE & INDEXING TYPES</div>
+    <div class="panel-body">
+      <b>1. Index Types</b>
+      <ul><li>HNSW (Hierarchical Navigable Small World)</li><li>IVF (Inverted File Index)</li><li>PQ (Product Quantization)</li><li>DiskANN</li><li>Flat (Brute Force)</li></ul>
+      <b>2. Features</b>
+      <ul><li>Metadata Indexing</li><li>Filtering Support</li><li>Hybrid Indexing (Dense + Sparse)</li><li>Sharding / Replication</li></ul>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--c2)">
+    <div class="panel-head" style="background:var(--c2bg); color:var(--c2)">EVALUATION <span style="color:var(--muted); font-weight:500; font-size:11.5px;">(How to measure RAG quality)</span></div>
+    <div class="panel-body">
+      <div class="eval-cols">
+        <div>
+          <b>Retrieval Evaluation</b>
+          <ul><li>Precision@K</li><li>Recall@K</li><li>MRR (Mean Reciprocal Rank)</li><li>NDCG (Normalized Discounted Cumulative Gain)</li><li>Hit Rate</li><li>Context Relevance</li></ul>
+        </div>
+        <div>
+          <b>Generation Evaluation</b>
+          <ul><li>Faithfulness</li><li>Answer Relevance</li><li>Context Recall</li><li>Hallucination Rate</li><li>ROUGE / BLEU (for certain tasks)</li><li>Human Evaluation</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--gold)">
+    <div class="panel-head" style="background:#241d0d; color:var(--gold)">BEST PRACTICES</div>
+    <div class="panel-body">
+      <ul class="check">
+        <li>Use Metadata Filtering for security & speed</li>
+        <li>Use Hybrid Search for better recall</li>
+        <li>Use RRF to combine retrievers</li>
+        <li>Use Reranker for precision</li>
+        <li>Use MMR for diversity</li>
+        <li>Monitor & evaluate continuously</li>
+        <li>Maintain good chunking strategy</li>
+        <li>Keep context within token limits</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--c1)">
+    <div class="panel-head" style="background:var(--c1bg); color:var(--c1)">END-TO-END FLOW SUMMARY</div>
+    <div class="panel-body flow">
+      <b>Data Ingestion</b> → <b>Processing</b> → <b>Embeddings</b> → <b>Indexing</b><br>↓<br>
+      <b>User Query</b> → <b>Query Transformation</b> → <b>Metadata Filtering</b><br>↓<br>
+      <b>Hybrid Search</b> (Dense + Sparse) → <b>RRF</b> → <b>Rerank</b><br>↓<br>
+      <b>Context Assembly</b> → <b>LLM</b> → <b>Final Answer</b>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div><span class="star">★</span> This is the complete RAG Engineering pipeline you've learned!</div>
+  <div class="badges">
+    <span>✅ Retrieval Internals</span>
+    <span>✅ Reranking</span>
+    <span>✅ Hybrid Search</span>
+    <span>✅ Query Transformation</span>
+    <span>✅ Metadata Filtering</span>
+    <span>🔗 All Connected</span>
+  </div>
+</div>
+
+</body>
+</html>
