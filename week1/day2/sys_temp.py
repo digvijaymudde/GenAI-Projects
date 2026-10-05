@@ -10,7 +10,7 @@ if not api_key:
     raise ValueError("GROQ_API_KEY is not defined")
 
 client = Groq(api_key=api_key)
-model="llama-3.3-70b-versatile"
+model="openai/gpt-oss-20b"
 role="user"
 prompt="I love you"
 sys_message={
