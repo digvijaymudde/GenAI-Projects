@@ -2,10 +2,8 @@
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 
-from typing import Annotated
-from typing_extensions import TypedDict
-import operator
 
+# 1. Define the shared state
 class TravelState(TypedDict, total=False):
     origin: str
     destination: str
@@ -17,124 +15,75 @@ class TravelState(TypedDict, total=False):
     weather: dict
     hotel_options: list[dict]
 
-    # Merge errors from parallel nodes instead of overwriting.
-    errors: Annotated[list[str], operator.add]
-
+    errors: list[str]
     final_plan: str
 
 
+# 2. Define graph nodes
+def validate_request(state: TravelState):
+    if not state.get("origin") or not state.get("destination"):
+        raise ValueError("Origin and destination are required")
 
-def run_with_retries(operation, attempts=3):
-    """Return (result, error). Retry failures up to a fixed limit."""
-    last_error = None
+    if state.get("days", 0) < 1:
+        raise ValueError("Trip duration must be at least one day")
 
-    for attempt in range(attempts):
-        try:
-            return operation(), None
-        except Exception as exc:
-            last_error = exc
+    if state.get("travelers", 0) < 1:
+        raise ValueError("At least one traveler is required")
 
-    return None, str(last_error)
+    if state.get("budget", 0) <= 0:
+        raise ValueError("Budget must be greater than zero")
+
+    return {}
 
 
 def search_travel(state: TravelState):
-    def operation():
-        # Replace with a real travel API call.
-        return [
+    # Mock data: later we will connect a real travel API.
+    return {
+        "travel_options": [
             {"mode": "Bus", "price": 1800},
             {"mode": "Train", "price": 1200},
         ]
-
-    result, error = run_with_retries(operation)
-
-    if error:
-        return {
-            "travel_options": [],
-            "errors": [f"Travel search failed: {error}"],
-        }
-
-    return {"travel_options": result}
+    }
 
 
 def check_weather(state: TravelState):
-    def operation():
-        # Replace with a real weather API call.
-        # Mock success for now.
-        return {
-            "summary": "Example weather result",
-            "source": "mock",
-        }
-
-    result, error = run_with_retries(operation)
-
-    if error:
-        return {
-            "weather": {
-                "status": "unavailable",
-                "summary": None,
-            },
-            "errors": [f"Weather lookup failed: {error}"],
-        }
-
+    # Mock data: not a real forecast.
     return {
         "weather": {
-            "status": "available",
-            **result,
+            "summary": "Example weather result",
+            "source": "mock"
         }
     }
 
 
 def search_hotels(state: TravelState):
-    def operation():
-        # Replace with a real hotel API call.
-        return [
+    # Mock data: later we will connect a hotel API.
+    return {
+        "hotel_options": [
             {"name": "Budget Stay", "nightly_price": 2500},
             {"name": "Coastal Hotel", "nightly_price": 4000},
         ]
-
-    result, error = run_with_retries(operation)
-
-    if error:
-        return {
-            "hotel_options": [],
-            "errors": [f"Hotel search failed: {error}"],
-        }
-
-    return {"hotel_options": result}
-
-
+    }
 
 
 def combine_results(state: TravelState):
     travel = state.get("travel_options", [])
     hotels = state.get("hotel_options", [])
     weather = state.get("weather", {})
-    errors = state.get("errors", [])
 
-    lines = [
-        f"Trip: {state['origin']} to {state['destination']}",
-        f"Duration: {state['days']} days",
-        f"Travelers: {state['travelers']}",
-        f"Budget: Rs. {state['budget']}",
-        "",
-        f"Travel options: {travel or 'Unavailable'}",
-        f"Hotel options: {hotels or 'Unavailable'}",
-    ]
-
-    if weather.get("status") == "available":
-        lines.append(f"Weather: {weather.get('summary')}")
-    else:
-        lines.append(
-            "Weather: Unavailable; check a reliable forecast before travelling."
+    return {
+        "final_plan": (
+            f"Trip: {state['origin']} to {state['destination']}\n"
+            f"Duration: {state['days']} days\n"
+            f"Travel options: {travel}\n"
+            f"Hotel options: {hotels}\n"
+            f"Weather: {weather}\n"
+            f"Budget: ₹{state['budget']}"
         )
-
-    if errors:
-        lines.extend(["", "Warnings:"])
-        lines.extend(f"- {error}" for error in errors)
-
-    return {"final_plan": "\n".join(lines)}
+    }
 
 
+# 3. Build the graph
 builder = StateGraph(TravelState)
 
 builder.add_node("validate", validate_request)
@@ -145,20 +94,23 @@ builder.add_node("combine", combine_results)
 
 builder.add_edge(START, "validate")
 
+# Fan-out: independent tasks
 builder.add_edge("validate", "search_travel")
 builder.add_edge("validate", "check_weather")
 builder.add_edge("validate", "search_hotels")
 
-# Fan-in waits for all three upstream branches.
+# Fan-in: wait for all three tasks before combining
 builder.add_edge(
     ["search_travel", "check_weather", "search_hotels"],
-    "combine",
+    "combine"
 )
 
 builder.add_edge("combine", END)
 
 graph = builder.compile()
 
+
+# 4. Run the graph
 result = graph.invoke({
     "origin": "Pune",
     "destination": "Goa",
@@ -169,4 +121,3 @@ result = graph.invoke({
 })
 
 print(result["final_plan"])
-print("Captured errors:", result.get("errors", []))
